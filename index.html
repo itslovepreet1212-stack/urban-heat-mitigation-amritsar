@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urban Heat Mitigation — Amritsar Pilot Study</title>
+  <meta name="description" content="An urban heat mitigation decision-support dashboard for the Amritsar Pilot Study, designed for the ISRO Hackathon 2025. Powered by Llama 3.3 and satellite inputs.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- MapTiler SDK JS & CSS -->
+  <link href="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.css" rel="stylesheet" />
+  <script src="https://cdn.maptiler.com/maptiler-sdk-js/v2.0.3/maptiler-sdk.umd.min.js"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Topbar -->
+    <header class="topbar" role="banner">
+      <div class="topbar-left">
+        <span class="amber-dot-pulse" aria-hidden="true"></span>
+        <div class="isro-badge">ISRO HACKATHON 2025</div>
+        <div class="separator-v"></div>
+        <h1 class="topbar-title">Urban Heat Mitigation — Amritsar Pilot Study</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-segment">
+          <span class="live-dot-pulse" aria-hidden="true"></span>
+          <span class="live-text">LIVE</span>
+        </div>
+        <div class="topbar-segment">Landsat 8  ·  May–Aug 2024</div>
+        <div class="topbar-segment">Random Forest  ·  R² 0.51  ·  MAE 1.39°C</div>
+        <div class="topbar-segment last">16 Localities  ·  Amritsar, Punjab</div>
+      </div>
+    </header>
+
+    <!-- Stat Strip -->
+    <section class="stat-strip" aria-label="Key Performance Indicators">
+      <div class="stat-card" id="stat-localities">
+        <span class="stat-label">Localities Analyzed</span>
+        <span class="stat-value text-default">16</span>
+      </div>
+      <div class="stat-card" id="stat-peak-temp">
+        <span class="stat-label">Peak Surface Temp</span>
+        <span class="stat-value text-red">46.91°C</span>
+      </div>
+      <div class="stat-card" id="stat-avg-temp">
+        <span class="stat-label">City Average Temp</span>
+        <span class="stat-value text-orange">46.13°C</span>
+      </div>
+      <div class="stat-card" id="stat-cooling-potential">
+        <span class="stat-label">Avg Cooling Potential</span>
+        <span class="stat-value text-green">−4.11°C</span>
+      </div>
+      <div class="stat-card" id="stat-best-reduction">
+        <span class="stat-label">Best Zone Reduction</span>
+        <span class="stat-value text-amber">−5.19°C</span>
+      </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+      <!-- Map Container -->
+      <section class="map-section" aria-label="Satellite Heat Mitigation Map">
+        <div id="map"></div>
+        
+        <!-- Legend Overlay -->
+        <div class="map-overlay legend-overlay">
+          <div class="legend-title">LST THERMAL SCALE</div>
+          <div class="legend-gradient"></div>
+          <div class="legend-labels">
+            <span>45.60°C (Teal)</span>
+            <span>46.91°C (Red)</span>
+          </div>
+        </div>
+
+        <!-- Map Interaction Overlay -->
+        <div class="map-overlay controls-overlay">
+          <button id="zoom-toggle" class="control-btn" aria-pressed="false">
+            <span class="toggle-icon">🖱️</span> Enable Scroll Zoom
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Panel -->
+      <aside class="right-panel" aria-label="Mitigation Analysis and Model Recommendations">
+        <!-- AI Sticky Header -->
+        <div class="panel-section ai-header">
+          <div class="ai-title-row">
+            <div class="brain-icon" aria-hidden="true">🧠</div>
+            <div class="ai-title-group">
+              <h2>AI Model Analysis — Heat Drivers &amp; Interventions</h2>
+              <p class="ai-subtitle">Llama 3.3 70B via Groq  ·  NDVI &amp; NDBI driver model  ·  2,000 training points  ·  Physics-informed ML</p>
+            </div>
+          </div>
+          <ul class="ai-bullet-list">
+            <li><span class="bullet-check">✓</span> High surface temps driven by low vegetation &amp; high built-up density confirmed across all 16 zones</li>
+            <li><span class="bullet-check">✓</span> Railway Station / Hall Bazaar is the hottest zone at 46.91°C — top priority for immediate intervention</li>
+            <li><span class="bullet-check">✓</span> Cool roofs reduce temperature ~3× more effectively than greenery alone across all localities</li>
+            <li><span class="bullet-check">✓</span> Combined strategy delivers up to 5.19°C reduction in Civil Lines / Mall Road</li>
+            <li><span class="bullet-check">✓</span> NDVI and NDBI each explain ~50% of temperature variation — both drivers must be addressed together</li>
+          </ul>
+        </div>
+
+        <!-- Scrollable panel content wrapper -->
+        <div class="panel-scroll-content">
+          <!-- Zone Detail Section -->
+          <div class="panel-section zone-detail">
+            <div class="zone-name-row">
+              <span id="detail-zone-name" class="zone-title">Civil Lines / Mall Road</span>
+              <span id="detail-priority-badge" class="priority-badge pill-high">High Priority</span>
+            </div>
+            <div id="detail-coordinates" class="coordinates-text">LAT: 31.6438° N  |  LON: 74.8438° E</div>
+            
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <span class="metric-label">Current Surface Temp</span>
+                <span id="metric-current-temp" class="metric-value temp-color-val">45.69°C</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Max Reduction (Combined)</span>
+                <span id="metric-max-reduction" class="metric-value text-green">−5.19°C</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bar Chart Section -->
+          <div class="panel-section bar-chart-section">
+            <div class="section-label">COOLING POTENTIAL BY STRATEGY</div>
+            
+            <div class="progress-bar-group">
+              <div class="progress-bar-header">
+                <span class="strategy-name">Greenery / Trees</span>
+                <span id="bar-greenery-val" class="strategy-value text-green">1.50°C</span>
+              </div>
+              <div class="progress-track">
+                <div id="bar-greenery" class="progress-fill bg-green" style="width: 25%"></div>
+              </div>
+            </div>
+
+            <div class="progress-bar-group">
+              <div class="progress-bar-header">
+                <span class="strategy-name">Cool / Reflective Roofs</span>
+                <span id="bar-roofs-val" class="strategy-value text-sky">1.97°C</span>
+              </div>
+              <div class="progress-track">
+                <div id="bar-roofs" class="progress-fill bg-sky" style="width: 32.8%"></div>
+              </div>
+            </div>
+
+            <div class="progress-bar-group">
+              <div class="progress-bar-header">
+                <span class="strategy-name">Combined Strategy</span>
+                <span id="bar-combined-val" class="strategy-value text-amber">5.19°C</span>
+              </div>
+              <div class="progress-track combined-track">
+                <div id="bar-combined" class="progress-fill bg-amber combined-fill" style="width: 86.5%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Recommendation Text -->
+          <div class="panel-section recommendation-section">
+            <div class="recommendation-tag-row">
+              <span class="tag-line"></span>
+              <span class="recommendation-tag">AI RECOMMENDATION · LLAMA 3.3 70B (GROQ)</span>
+            </div>
+            <p id="recommendation-text" class="recommendation-body">
+              Civil Lines / Mall Road shows the city's highest combined cooling potential at 5.19°C. Both greenery and cool roofs contribute strongly here — making this zone ideal for a flagship pilot intervention combining tree planting along Mall Road with cool roof retrofits on commercial buildings.
+            </p>
+          </div>
+
+          <!-- Zone Priority List -->
+          <div class="panel-section list-section">
+            <div class="list-header">
+              <span class="header-col col-locality">LOCALITY</span>
+              <span class="header-col col-temp">TEMP</span>
+              <span class="header-col col-reduction">REDUCTION</span>
+            </div>
+            <div id="zone-priority-list" class="zone-list-container" role="listbox" aria-label="Zone Priority List">
+              <!-- Dynamically populated rows -->
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer" role="contentinfo">
+      <div class="footer-left">Data: Landsat 8 (USGS/NASA) via Google Earth Engine  ·  Map: MapTiler / OpenStreetMap</div>
+      <div class="footer-center">AI: Llama 3.3 70B via Groq</div>
+      <div class="footer-right">Prototype for ISRO Hackathon evaluation — not an operational tool</div>
+    </footer>
+  </div>
+
+  <!-- App logic -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
